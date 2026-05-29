@@ -41,34 +41,54 @@ function isSameLanguageFamily(detected: string | null, target: string): boolean 
 async function translateGoogle(
   text: string,
   targetLang: string,
-  apiKey: string,
+  apiKey?: string,
 ): Promise<TranslationResult> {
-  const url = `https://translation.googleapis.com/language/translate/v2`;
-  const response = await safeFetch(url, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      q: text,
-      target: targetLang,
-      format: 'text',
-    }),
-  }, 15000);
+  if (apiKey) {
+    const url = `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`;
+    const response = await safeFetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ q: text, target: targetLang, format: 'text' }),
+    }, 15000);
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      throw new Error(`Google Translation API error ${response.status}: ${errorText}`);
+    }
+
+    const data = (await response.json()) as {
+      data: { translations: { translatedText: string; detectedSourceLanguage: string }[] };
+    };
+
+    const translation = data.data.translations[0];
+    return {
+      translated: translation?.translatedText ?? text,
+      sourceLang: translation?.detectedSourceLanguage ?? null,
+    };
+  }
+
+  // Free Google Translate API (no API key required)
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+  const response = await safeFetch(url, { method: 'GET' }, 15000);
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => '');
     throw new Error(`Google Translation API error ${response.status}: ${errorText}`);
   }
 
-  const data = (await response.json()) as {
-    data: { translations: { translatedText: string; detectedSourceLanguage: string }[] };
-  };
+  const data = (await response.json()) as [
+    Array<[string, string, string, string, number]>,
+    string | null,
+  ];
 
-  const translation = data.data.translations[0];
+  let translated = '';
+  for (const part of data[0] || []) {
+    translated += part[0] || '';
+  }
+
   return {
-    translated: translation?.translatedText ?? text,
-    sourceLang: translation?.detectedSourceLanguage ?? null,
+    translated: translated || text,
+    sourceLang: data[1] ?? null,
   };
 }
 
@@ -103,14 +123,68 @@ async function translateMicrosoft(
   };
 }
 
+async function translateMyMemory(
+  text: string,
+  targetLang: string,
+): Promise<TranslationResult> {
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=auto|${targetLang}`;
+  const response = await safeFetch(url, { method: 'GET' }, 15000);
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '');
+    throw new Error(`MyMemory API error ${response.status}: ${errorText}`);
+  }
+
+  const data = (await response.json()) as {
+    responseData?: { translatedText: string };
+    responseStatus: number;
+    responseDetails?: string;
+  };
+
+  if (data.responseStatus !== 200) {
+    throw new Error(data.responseDetails || 'Translation failed');
+  }
+
+  return {
+    translated: data.responseData?.translatedText ?? text,
+    sourceLang: null,
+  };
+}
+
+async function translateLibreTranslate(
+  text: string,
+  targetLang: string,
+  baseUrl = 'https://libretranslate.de',
+): Promise<TranslationResult> {
+  const url = `${baseUrl}/translate`;
+  const response = await safeFetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ q: text, source: 'auto', target: targetLang, format: 'text' }),
+  }, 15000);
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '');
+    throw new Error(`LibreTranslate API error ${response.status}: ${errorText}`);
+  }
+
+  const data = (await response.json()) as { translatedText: string; detectedLanguage?: { language: string } };
+
+  return {
+    translated: data.translatedText ?? text,
+    sourceLang: data.detectedLanguage?.language ?? null,
+  };
+}
+
 function normalizeConfig(config?: TranslationConfig): TranslationConfig {
   if (!config) {
-    return { provider: 'none' };
+    return { provider: 'google-free' };
   }
+  const validProviders = ['google', 'google-free', 'microsoft', 'mymemory', 'libretranslate', 'none'];
   return {
-    provider: (['google', 'microsoft', 'none'].includes(config.provider)
+    provider: validProviders.includes(config.provider)
       ? config.provider
-      : 'none') as TranslationConfig['provider'],
+      : 'google-free',
     apiKey: config.apiKey,
     model: config.model,
     baseUrl: config.baseUrl,
@@ -124,32 +198,45 @@ export async function translateText(
 ): Promise<TranslationResult> {
   const normalized = normalizeConfig(config);
 
-  if (normalized.provider === 'none' || !normalized.apiKey) {
-    return {
-      translated: text,
-      sourceLang: detectLanguage(text),
-    };
+  if (normalized.provider === 'none') {
+    return { translated: text, sourceLang: detectLanguage(text) };
   }
 
   const detected = detectLanguage(text);
   if (isSameLanguageFamily(detected, targetLang)) {
-    return {
-      translated: text,
-      sourceLang: detected,
-    };
+    return { translated: text, sourceLang: detected };
   }
 
-  switch (normalized.provider) {
-    case 'google':
-      return translateGoogle(text, targetLang, normalized.apiKey);
+  try {
+    switch (normalized.provider) {
+      case 'google':
+        return await translateGoogle(text, targetLang, normalized.apiKey);
 
-    case 'microsoft':
-      return translateMicrosoft(text, targetLang, normalized.apiKey);
+      case 'google-free':
+        return await translateGoogle(text, targetLang);
 
-    default:
-      return {
-        translated: text,
-        sourceLang: detected,
-      };
+      case 'microsoft':
+        if (!normalized.apiKey) throw new Error('Microsoft Translator requires API key');
+        return await translateMicrosoft(text, targetLang, normalized.apiKey);
+
+      case 'mymemory':
+        return await translateMyMemory(text, targetLang);
+
+      case 'libretranslate':
+        return await translateLibreTranslate(text, targetLang, normalized.baseUrl);
+
+      default:
+        return await translateGoogle(text, targetLang);
+    }
+  } catch (err) {
+    // Fallback to free Google Translate
+    try {
+      if (normalized.provider !== 'google-free') {
+        return await translateGoogle(text, targetLang);
+      }
+    } catch {
+      // Fall through
+    }
+    throw err;
   }
 }

@@ -91,9 +91,13 @@ async function loadSettings() {
       if (data.translation.apiKey) {
         $('#translationApiKey').value = data.translation.apiKey;
       }
+      if (data.translation.baseUrl) {
+        $('#translationBaseUrl').value = data.translation.baseUrl;
+      }
       if (data.translation.targetLang) {
         $('#translationTargetLang').value = data.translation.targetLang;
       }
+      updateTranslationFields();
     }
 
     if (data.telegram) {
@@ -138,6 +142,26 @@ function updateDefaultModelDisplay() {
 
   if (!modelSelect.value && defaultModel) {
     modelSelect.value = '';
+  }
+}
+
+function updateTranslationFields() {
+  const provider = $('#translationProvider').value;
+  const apiKeyGroup = $('#translationApiKeyGroup');
+  const baseUrlGroup = $('#translationBaseUrlGroup');
+
+  // Show API key field only for providers that need it
+  if (['google', 'microsoft'].includes(provider)) {
+    apiKeyGroup.style.display = 'block';
+  } else {
+    apiKeyGroup.style.display = 'none';
+  }
+
+  // Show base URL field only for LibreTranslate
+  if (provider === 'libretranslate') {
+    baseUrlGroup.style.display = 'block';
+  } else {
+    baseUrlGroup.style.display = 'none';
   }
 }
 
@@ -193,6 +217,7 @@ async function saveSettings() {
       enabled: $('#translateEnabled').checked,
       provider: $('#translationProvider').value,
       apiKey: $('#translationApiKey').value,
+      baseUrl: $('#translationBaseUrl').value,
       targetLang: $('#translationTargetLang').value || 'zh',
     },
     telegram: {
@@ -426,10 +451,17 @@ function init() {
     updateDefaultModelDisplay();
     markDirty();
   });
+  $('#translationProvider').addEventListener('change', () => {
+    updateTranslationFields();
+    markDirty();
+  });
 
   setupToggleVisibility();
   setupLanguageToggle();
   setupDirtyTracking();
+
+  // Initialize translation fields visibility
+  updateTranslationFields();
 
   window.addEventListener('beforeunload', (e) => {
     if (hasUnsavedChanges) {

@@ -299,9 +299,16 @@ npm run deploy
 ### 翻译配置
 
 1. 开启"翻译非中文内容"
-2. 选择翻译提供商（Google 或 Microsoft）
-3. 输入翻译 API Key
-4. 保存
+2. 选择翻译提供商：
+   - **Google (Free, No API Key)** - 默认推荐，无需配置
+   - **Google (API Key)** - 需要 Google Cloud API Key
+   - **Microsoft (API Key)** - 需要 Azure API Key
+   - **MyMemory (Free, No API Key)** - 免费翻译服务
+   - **LibreTranslate (Free)** - 免费开源翻译，可自定义服务器
+3. （可选）如需使用付费服务，输入对应 API Key
+4. 保存即可使用
+
+*注：选择免费翻译服务时无需输入 API Key！*
 
 ### Telegram Bot 配置
 
