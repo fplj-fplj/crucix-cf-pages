@@ -326,16 +326,20 @@ on:
 
 ### 翻译配置
 
-本项目仅使用 **DeepL** 翻译服务：
+本项目提供多种免费翻译服务（均无需 API Key）：
 
 1. 开启"翻译非中文内容"
-2. 选择翻译模式：
-   - **DeepL (Free, No API Key)** - 默认推荐，每月 50 万字符免费额度
-   - **DeepL (API Key)** - 需要 DeepL Pro API Key（更高额度和优先级）
+2. 选择翻译提供商：
+   - **Google (Free)** - 默认推荐，无需配置
+   - **Microsoft (Free)** - 无需配置
+   - **DeepL (Free)** - 每月 50 万字符免费额度
+   - **DeepL (API Key)** - 需要 DeepL Pro API Key（更高额度）
+   - **MyMemory (Free)** - 免费翻译服务
+   - **LibreTranslate (Free)** - 免费开源翻译，可自定义服务器
 3. （可选）如需使用 DeepL Pro，输入 API Key
 4. 保存即可使用
 
-*注：选择免费模式时无需输入 API Key！*
+*注：除 DeepL Pro 外，所有翻译服务均无需 API Key！*
 
 ### Telegram Bot 配置
 

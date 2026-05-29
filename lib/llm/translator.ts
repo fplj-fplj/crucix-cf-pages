@@ -38,6 +38,61 @@ function isSameLanguageFamily(detected: string | null, target: string): boolean 
   return false;
 }
 
+async function translateGoogle(
+  text: string,
+  targetLang: string,
+): Promise<TranslationResult> {
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+  const response = await safeFetch(url, { method: 'GET' }, 15000);
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '');
+    throw new Error(`Google Translation API error ${response.status}: ${errorText}`);
+  }
+
+  const data = (await response.json()) as [
+    Array<[string, string, string, string, number]>,
+    string | null,
+  ];
+
+  let translated = '';
+  for (const part of data[0] || []) {
+    translated += part[0] || '';
+  }
+
+  return {
+    translated: translated || text,
+    sourceLang: data[1] ?? null,
+  };
+}
+
+async function translateMicrosoft(
+  text: string,
+  targetLang: string,
+): Promise<TranslationResult> {
+  const url = `https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=${targetLang}`;
+  const response = await safeFetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify([{ text }]),
+  }, 15000);
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '');
+    throw new Error(`Microsoft Translation API error ${response.status}: ${errorText}`);
+  }
+
+  const data = (await response.json()) as {
+    translations: { text: string; to: string }[];
+    detectedLanguage?: { language: string };
+  }[];
+
+  return {
+    translated: data[0]?.translations[0]?.text ?? text,
+    sourceLang: data[0]?.detectedLanguage?.language ?? null,
+  };
+}
+
 async function translateDeepL(
   text: string,
   targetLang: string,
@@ -71,15 +126,68 @@ async function translateDeepL(
   };
 }
 
+async function translateMyMemory(
+  text: string,
+  targetLang: string,
+): Promise<TranslationResult> {
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=auto|${targetLang}`;
+  const response = await safeFetch(url, { method: 'GET' }, 15000);
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '');
+    throw new Error(`MyMemory API error ${response.status}: ${errorText}`);
+  }
+
+  const data = (await response.json()) as {
+    responseData?: { translatedText: string };
+    responseStatus: number;
+    responseDetails?: string;
+  };
+
+  if (data.responseStatus !== 200) {
+    throw new Error(data.responseDetails || 'Translation failed');
+  }
+
+  return {
+    translated: data.responseData?.translatedText ?? text,
+    sourceLang: null,
+  };
+}
+
+async function translateLibreTranslate(
+  text: string,
+  targetLang: string,
+  baseUrl = 'https://libretranslate.de',
+): Promise<TranslationResult> {
+  const url = `${baseUrl}/translate`;
+  const response = await safeFetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ q: text, source: 'auto', target: targetLang, format: 'text' }),
+  }, 15000);
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '');
+    throw new Error(`LibreTranslate API error ${response.status}: ${errorText}`);
+  }
+
+  const data = (await response.json()) as { translatedText: string; detectedLanguage?: { language: string } };
+
+  return {
+    translated: data.translatedText ?? text,
+    sourceLang: data.detectedLanguage?.language ?? null,
+  };
+}
+
 function normalizeConfig(config?: TranslationConfig): TranslationConfig {
   if (!config) {
-    return { provider: 'deepl-free' };
+    return { provider: 'google' };
   }
-  const validProviders = ['deepl', 'deepl-free', 'none'];
+  const validProviders = ['google', 'microsoft', 'deepl', 'deepl-pro', 'mymemory', 'libretranslate', 'none'];
   return {
     provider: validProviders.includes(config.provider)
       ? config.provider
-      : 'deepl-free',
+      : 'google',
     apiKey: config.apiKey,
     model: config.model,
     baseUrl: config.baseUrl,
@@ -104,12 +212,26 @@ export async function translateText(
 
   try {
     switch (normalized.provider) {
+      case 'google':
+        return await translateGoogle(text, targetLang);
+
+      case 'microsoft':
+        return await translateMicrosoft(text, targetLang);
+
       case 'deepl':
+        return await translateDeepL(text, targetLang);
+
+      case 'deepl-pro':
         return await translateDeepL(text, targetLang, normalized.apiKey);
 
-      case 'deepl-free':
+      case 'mymemory':
+        return await translateMyMemory(text, targetLang);
+
+      case 'libretranslate':
+        return await translateLibreTranslate(text, targetLang, normalized.baseUrl);
+
       default:
-        return await translateDeepL(text, targetLang);
+        return await translateGoogle(text, targetLang);
     }
   } catch (err) {
     throw err;
