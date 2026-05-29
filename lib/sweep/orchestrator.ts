@@ -18,24 +18,18 @@ import { fetchRssData } from '../sources/rss';
 import { fetchTelegramOsintData } from '../sources/telegram-osint';
 import { fetchUsDebtData } from '../sources/us-debt';
 import { fetchGscpiData } from '../sources/gscpi';
-import type { SourceResult, Settings, BriefingData, SweepStatus } from '../types';
-import { setBriefing, setSweepStatus, getBriefing } from '../kv';
+import type { SourceResult, Settings, BriefingData, DeltaData } from '../types';
 import { synthesizeBriefing } from './synthesizer';
 import { computeDelta } from '../delta/engine';
-export { computeDelta } from '../delta/engine';
-import { setDelta } from '../kv';
 
-export async function runSweep(kv: KVNamespace, config: Settings): Promise<BriefingData> {
-  const sweepStart = new Date().toISOString();
+export { computeDelta };
 
-  await setSweepStatus(kv, {
-    lastSweep: sweepStart,
-    nextSweep: new Date(Date.now() + config.refreshInterval * 60 * 1000).toISOString(),
-    sourceCount: 20,
-    healthySources: 0,
-    isSweeping: true,
-  });
+export interface SweepResult {
+  briefing: BriefingData;
+  results: SourceResult[];
+}
 
+export async function runSweep(config: Settings): Promise<SweepResult> {
   const keys = config.apiKeys ?? {};
   const telegramToken = config.telegram?.botToken ?? '';
 
@@ -74,25 +68,7 @@ export async function runSweep(kv: KVNamespace, config: Settings): Promise<Brief
     };
   });
 
-  const previousBriefing = await getBriefing(kv);
   const briefing = synthesizeBriefing(results);
 
-  const delta = computeDelta(briefing, previousBriefing);
-  briefing.sweepDelta = delta;
-
-  await setBriefing(kv, briefing);
-  await setDelta(kv, delta);
-
-  const healthySources = results.filter((r) => r.success).length;
-  const nextSweep = new Date(Date.now() + config.refreshInterval * 60 * 1000).toISOString();
-
-  await setSweepStatus(kv, {
-    lastSweep: sweepStart,
-    nextSweep,
-    sourceCount: results.length,
-    healthySources,
-    isSweeping: false,
-  });
-
-  return briefing;
+  return { briefing, results };
 }

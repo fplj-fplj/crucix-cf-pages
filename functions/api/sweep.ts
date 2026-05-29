@@ -1,7 +1,6 @@
-import type { Env, Settings, BriefingData, DeltaData, Alert } from '../../lib/types';
+import type { Env, Settings, BriefingData, DeltaData, Alert, SourceResult } from '../../lib/types';
 import { getSweepStatus, setSweepStatus, getSettings, getBriefing, setBriefing, setDelta } from '../../lib/kv';
-import { runSweep } from '../../lib/sweep/orchestrator';
-import { computeDelta } from '../../lib/delta/engine';
+import { runSweep, computeDelta } from '../../lib/sweep/orchestrator';
 import { classifyAlerts } from '../../lib/alerts/classifier';
 import { deduplicateAlerts } from '../../lib/alerts/dedup';
 import { addAlertsToHistory } from '../../lib/alerts/history';
@@ -61,19 +60,21 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
 
     try {
       const settings = await getSettings(context.env.CONFIG_KV, context.env);
-    if (!settings) {
-      return new Response(JSON.stringify({ status: 'error', message: 'No settings configured' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
+      if (!settings) {
+        return new Response(JSON.stringify({ status: 'error', message: 'No settings configured' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
 
-    const previousBriefing = await getBriefing(context.env.BRIEFING_KV);
+      const previousBriefing = await getBriefing(context.env.BRIEFING_KV);
 
-    const briefing: BriefingData = await runSweep(context.env.BRIEFING_KV, settings);
-    await setBriefing(context.env.BRIEFING_KV, briefing);
-
-    const delta: DeltaData = computeDelta(briefing, previousBriefing);
+      const { briefing, results } = await runSweep(settings);
+      
+      const delta: DeltaData = computeDelta(briefing, previousBriefing);
+      briefing.sweepDelta = delta;
+      
+      await setBriefing(context.env.BRIEFING_KV, briefing);
       await setDelta(context.env.BRIEFING_KV, delta);
 
       let alerts = await classifyAlerts(delta, briefing, settings?.llm);
@@ -90,11 +91,12 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
         await pushToDiscord(settings.discord.webhookUrl, alerts);
       }
 
+      const healthySources = results.filter((r: SourceResult) => r.success).length;
       await setSweepStatus(context.env.BRIEFING_KV, {
         lastSweep: new Date().toISOString(),
         nextSweep: new Date(Date.now() + (settings?.refreshInterval ?? 15) * 60 * 1000).toISOString(),
-        sourceCount: briefing.newsTicker.length + briefing.osintFeed.length,
-        healthySources: status?.healthySources ?? 0,
+        sourceCount: results.length,
+        healthySources,
         isSweeping: false,
       });
 

@@ -1,4 +1,4 @@
-import type { Env, Alert, Settings } from '../lib/types';
+import type { Env, Alert, Settings, SourceResult } from '../lib/types';
 import {
   getSettings,
   getBriefing,
@@ -7,8 +7,7 @@ import {
   setSweepStatus,
   getSweepStatus,
 } from '../lib/kv';
-import { runSweep } from '../lib/sweep/orchestrator';
-import { computeDelta } from '../lib/delta/engine';
+import { runSweep, computeDelta } from '../lib/sweep/orchestrator';
 import { classifyAlerts } from '../lib/alerts/classifier';
 import { deduplicateAlerts } from '../lib/alerts/dedup';
 import { addAlertsToHistory } from '../lib/alerts/history';
@@ -35,9 +34,12 @@ export default {
       isSweeping: true,
     });
 
+    let results: SourceResult[];
     let briefing;
     try {
-      briefing = await runSweep(env.BRIEFING_KV, config);
+      const sweepResult = await runSweep(config);
+      briefing = sweepResult.briefing;
+      results = sweepResult.results;
     } catch {
       const status = await getSweepStatus(env.BRIEFING_KV);
       await setSweepStatus(env.BRIEFING_KV, {
@@ -50,9 +52,10 @@ export default {
       return;
     }
 
-    await setBriefing(env.BRIEFING_KV, briefing);
-
     const delta = computeDelta(briefing, previousBriefing);
+    briefing.sweepDelta = delta;
+    
+    await setBriefing(env.BRIEFING_KV, briefing);
     await setDelta(env.BRIEFING_KV, delta);
 
     let alerts = await classifyAlerts(delta, briefing, config.llm);
@@ -64,11 +67,12 @@ export default {
 
     const now = new Date().toISOString();
     const nextSweep = new Date(Date.now() + config.refreshInterval * 60000).toISOString();
+    const healthySources = results.filter((r) => r.success).length;
     await setSweepStatus(env.BRIEFING_KV, {
       lastSweep: now,
       nextSweep,
-      sourceCount: briefing.newsTicker.length + briefing.osintFeed.length,
-      healthySources: briefing.newsTicker.length + briefing.osintFeed.length,
+      sourceCount: results.length,
+      healthySources,
       isSweeping: false,
     });
 

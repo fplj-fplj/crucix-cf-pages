@@ -24,7 +24,7 @@ export async function handleTelegramCommand(
     }
     case '/sweep': {
       try {
-        await runSweep(kv, config);
+        await runSweep(config);
         return 'Sweep triggered successfully.';
       } catch {
         return 'Sweep failed. Check logs for details.';

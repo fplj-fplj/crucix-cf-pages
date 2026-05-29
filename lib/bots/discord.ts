@@ -54,7 +54,7 @@ export async function handleDiscordCommand(
     }
     case 'sweep': {
       try {
-        await runSweep(kv, config);
+        await runSweep(config);
         return { type: 4, data: { content: '✅ Sweep triggered successfully.' } };
       } catch {
         return { type: 4, data: { content: '❌ Sweep failed. Check logs for details.' } };
