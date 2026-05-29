@@ -2,7 +2,7 @@
 
 **你的专属情报终端。27 个数据源。一个命令。零云依赖。**
 
-[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/fplj-fplj/crucix-cf-pages)
+[![Deploy to Cloudflare Pages](https://img.shields.io/badge/Deploy%20to-Cloudflare%20Pages-orange?style=for-the-badge&logo=cloudflare)](https://dash.cloudflare.com/?to=/:account/pages/new)
 [![GitHub Actions](https://github.com/fplj-fplj/crucix-cf-pages/actions/workflows/deploy.yml/badge.svg)](https://github.com/fplj-fplj/crucix-cf-pages/actions)
 [![Node.js 22+](https://img.shields.io/badge/node-22%2B-brightgreen)](#前置要求)
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
@@ -91,13 +91,7 @@ LLM 功能：AI 交易想法生成、智能告警评估（FLASH/PRIORITY/ROUTINE
 
 ## 🚀 Cloudflare Pages 快速部署
 
-### 方式一：一键部署（推荐）
-
-[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/fplj-fplj/crucix-cf-pages)
-
-点击上方按钮，自动跳转到 Cloudflare，fork 此仓库后可直接部署。
-
-### 方式二：手动部署
+### 方式一：手动部署（推荐）
 
 #### 第一步：Fork 仓库
 
@@ -108,11 +102,63 @@ LLM 功能：AI 交易想法生成、智能告警评估（FLASH/PRIORITY/ROUTINE
 1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)
 2. 进入 **Workers & Pages** → **KV** → **Create a namespace**
 3. 创建两个命名空间：
-   - `BRIERKING_KV`（用于存储扫描结果）
+   - `BRIEFING_KV`（用于存储扫描结果）
    - `CONFIG_KV`（用于存储配置）
 4. 复制两个命名空间的 **ID**
 
-#### 第三步：配置 GitHub Secrets
+#### 第三步：在 Cloudflare Pages 中部署
+
+1. 在 Cloudflare Dashboard 中进入 **Workers & Pages** → **Create application** → **Pages**
+2. 点击 **Connect to Git**，选择你 fork 的仓库
+3. 配置部署设置：
+   - **Project name**: 自定义名称
+   - **Production branch**: `main`
+   - **Framework preset**: 选择 `None`
+   - **Build command**: 留空或输入 `npm run build`
+   - **Build output directory**: `public`
+4. 点击 **Save and Deploy**
+
+#### 第四步：配置 KV 绑定
+
+部署完成后：
+
+1. 进入你的 Pages 项目 → **Settings** → **Functions**
+2. 向下滚动到 **KV namespace bindings**
+3. 点击 **Add binding**
+4. 添加两个绑定：
+   - **Variable name**: `BRIEFING_KV`，选择刚才创建的同名 KV 命名空间
+   - **Variable name**: `CONFIG_KV`，选择刚才创建的同名 KV 命名空间
+5. 点击 **Save**
+
+#### 第五步：配置 Cron Trigger（可选但推荐）
+
+在 Pages 项目设置中：
+
+1. 进入 **Settings** → **Triggers** → **Cron Triggers**
+2. 点击 **Add trigger**
+3. 设置：
+   - **Cron expression**: `*/15 * * * *`（每 15 分钟执行一次）
+   - **Environment**: Production
+   - **Function**: 选择 `workers/cron-sweep.ts`
+4. 点击 **Save**
+
+#### 第六步：重新部署
+
+触发一次重新部署，让 KV 绑定生效：
+1. 进入 **Deployments** 标签
+2. 点击最新部署旁边的 **Retry deployment**，或者在 GitHub 中推一个空提交
+
+部署完成后访问 `https://your-project-name.pages.dev/`
+
+---
+
+### 方式二：使用 GitHub Actions 自动部署
+
+#### 第一步：Fork 仓库 + 创建 KV 命名空间
+
+同方式一的第一步和第二步。
+
+#### 第二步：配置 GitHub Secrets
 
 在 fork 的仓库中：
 
@@ -126,15 +172,18 @@ LLM 功能：AI 交易想法生成、智能告警评估（FLASH/PRIORITY/ROUTINE
 | `KV_BRIEFING_ID` | BRIEFING_KV 命名空间 ID |
 | `KV_CONFIG_ID` | CONFIG_KV 命名空间 ID |
 
+#### 第三步：创建 Pages 项目
+
+在 Cloudflare Pages 中创建项目（同方式一第三步），记录下项目名称。
+
 #### 第四步：自动部署
 
 push 到 `main` 分支时，GitHub Actions 自动：
 - 运行 TypeScript 编译
 - 部署到 Cloudflare Pages
 - 绑定 KV 命名空间
-- 配置 Cron Trigger
 
-部署完成后访问 `https://your-repo.pages.dev/`
+部署完成后访问 `https://your-project-name.pages.dev/`
 
 ### 方式三：本地开发
 

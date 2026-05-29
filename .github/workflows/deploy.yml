@@ -39,13 +39,13 @@ jobs:
         run: |
           BRIEFING_ID=$(npx wrangler kv namespace create BRIEFING_KV --env production --output-env-value 2>/dev/null || echo "${{ secrets.KV_BRIEFING_ID }}")
           CONFIG_ID=$(npx wrangler kv namespace create CONFIG_KV --env production --output-env-value 2>/dev/null || echo "${{ secrets.KV_CONFIG_ID }}")
-          echo "BRIEKING_KV_ID=$BRIEFING_ID" >> $GITHUB_ENV
+          echo "BRIEFING_KV_ID=$BRIEFING_ID" >> $GITHUB_ENV
           echo "CONFIG_KV_ID=$CONFIG_ID" >> $GITHUB_ENV
 
       - name: Update wrangler.toml with KV IDs
         run: |
-          sed -i "s/YOUR_BRIEFING_KV_ID/${{ secrets.KV_BRIEFING_ID || env.BRIEFING_KV_ID }}/g" wrangler.toml
-          sed -i "s/YOUR_CONFIG_KV_ID/${{ secrets.KV_CONFIG_ID || env.CONFIG_KV_ID }}/g" wrangler.toml
+          sed -i "s/PLACEHOLDER_BRIEFING_KV_ID/${{ secrets.KV_BRIEFING_ID || env.BRIEFING_KV_ID }}/g" wrangler.toml
+          sed -i "s/PLACEHOLDER_CONFIG_KV_ID/${{ secrets.KV_CONFIG_ID || env.CONFIG_KV_ID }}/g" wrangler.toml
           cat wrangler.toml
 
       - name: Deploy to Cloudflare Pages
