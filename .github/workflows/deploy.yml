@@ -1,0 +1,66 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Configure Cloudflare Credentials
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+
+      - name: Create KV Namespaces
+        run: |
+          BRIEFING_ID=$(npx wrangler kv namespace create BRIEFING_KV --env production --output-env-value 2>/dev/null || echo "${{ secrets.KV_BRIEFING_ID }}")
+          CONFIG_ID=$(npx wrangler kv namespace create CONFIG_KV --env production --output-env-value 2>/dev/null || echo "${{ secrets.KV_CONFIG_ID }}")
+          echo "BRIEKING_KV_ID=$BRIEFING_ID" >> $GITHUB_ENV
+          echo "CONFIG_KV_ID=$CONFIG_ID" >> $GITHUB_ENV
+
+      - name: Update wrangler.toml with KV IDs
+        run: |
+          sed -i "s/YOUR_BRIEFING_KV_ID/${{ secrets.KV_BRIEFING_ID || env.BRIEFING_KV_ID }}/g" wrangler.toml
+          sed -i "s/YOUR_CONFIG_KV_ID/${{ secrets.KV_CONFIG_ID || env.CONFIG_KV_ID }}/g" wrangler.toml
+          cat wrangler.toml
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          projectName: crucix-cf-pages
+          directory: public
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          wranglerConfig: './wrangler.toml'
+          routesConfig: './wrangler.toml'
+          outputConfigFile: './_routes.json'
+
+      - name: Purge KV Cache
+        run: |
+          npx wrangler kv:key put --namespace-id=${{ secrets.KV_BRIEFING_ID || env.BRIEFING_KV_ID }} "init" "true" --ttl 86400 2>/dev/null || true
+          echo "Deployment complete!"

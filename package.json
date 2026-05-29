@@ -1,0 +1,16 @@
+{
+  "name": "crucix-cf-pages",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler pages dev public --kv BRIEFING_KV --kv CONFIG_KV --port 3117",
+    "deploy": "wrangler pages deploy public",
+    "build": "echo 'Static site, no build step required'"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0",
+    "typescript": "^5.5.0",
+    "@cloudflare/workers-types": "^4.0.0"
+  }
+}
