@@ -2,8 +2,8 @@
 
 **你的专属情报终端。27 个数据源。一个命令。零云依赖。**
 
-[![Deploy to Cloudflare Pages](https://deploy.cloudflare.com/button)](https://deploy.cloudflare.com/)
-[![GitHub Actions](https://github.com/crucix/crucix-cf-pages/actions/workflows/deploy.yml/badge.svg)](https://github.com/crucix/crucix-cf-pages/actions)
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/fplj-fplj/crucix-cf-pages)
+[![GitHub Actions](https://github.com/fplj-fplj/crucix-cf-pages/actions/workflows/deploy.yml/badge.svg)](https://github.com/fplj-fplj/crucix-cf-pages/actions)
 [![Node.js 22+](https://img.shields.io/badge/node-22%2B-brightgreen)](#前置要求)
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
 
@@ -93,9 +93,9 @@ LLM 功能：AI 交易想法生成、智能告警评估（FLASH/PRIORITY/ROUTINE
 
 ### 方式一：一键部署（推荐）
 
-[![Deploy to Cloudflare Pages](https://deploy.cloudflare.com/button)](https://deploy.cloudflare.com/)
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/fplj-fplj/crucix-cf-pages)
 
-点击上方按钮，自动跳转到 Cloudflare Pages，fork 此仓库后可直接部署。
+点击上方按钮，自动跳转到 Cloudflare，fork 此仓库后可直接部署。
 
 ### 方式二：手动部署
 
