@@ -21,6 +21,13 @@ function maskSettings(settings: Settings): Record<string, unknown> {
     masked.llm = { ...settings.llm, apiKey: maskApiKey(settings.llm.apiKey) };
   }
 
+  if (settings.translation) {
+    masked.translation = {
+      ...settings.translation,
+      apiKey: settings.translation.apiKey ? maskApiKey(settings.translation.apiKey) : undefined,
+    };
+  }
+
   if (settings.telegram?.botToken) {
     masked.telegram = { ...settings.telegram, botToken: maskApiKey(settings.telegram.botToken) };
   }
@@ -97,6 +104,7 @@ export async function onRequestPut(context: { env: Env; request: Request }) {
     const settings: Settings = {
       apiKeys: body.apiKeys ?? {},
       llm: body.llm,
+      translation: body.translation,
       telegram: body.telegram,
       discord: body.discord,
       refreshInterval: body.refreshInterval,

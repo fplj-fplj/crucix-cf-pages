@@ -146,9 +146,18 @@ export interface LLMConfig {
   baseUrl?: string;
 }
 
+export interface TranslationConfig {
+  enabled: boolean;
+  provider: string;
+  apiKey?: string;
+  baseUrl?: string;
+  targetLang: string;
+}
+
 export interface Settings {
   apiKeys: Record<string, string>;
   llm: LLMConfig;
+  translation?: TranslationConfig;
   telegram?: { botToken: string; chatId: string };
   discord?: { webhookUrl: string; botToken?: string; channelId?: string; guildId?: string };
   refreshInterval: number;
