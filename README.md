@@ -11,6 +11,19 @@
 
 ---
 
+## 🙏 致谢
+
+本项目是 [Crucix](https://github.com/calesthio/Crucix) 的复刻版本，感谢原作者 [calesthio](https://github.com/calesthio) 创造了如此出色的 OSINT 情报终端。
+
+原项目的创新设计和架构为这个 CF Pages 版本奠定了坚实基础。我们在原版基础上进行了以下改进：
+- 适配 Cloudflare Pages 无服务器架构
+- 添加完整中英双语支持
+- 新增内容翻译功能（Google/Microsoft 翻译）
+- 将 Bot 从轮询模式改为 Webhook 模式
+- 优化前端性能和响应式设计
+
+---
+
 ## 功能特性
 
 ### 🌍 Jarvis 风格 HUD 仪表盘
@@ -248,22 +261,34 @@ npm run deploy
 
 访问部署后的 `/settings` 页面配置所有选项。
 
-### 推荐免费 API 密钥（3 分钟注册）
+### API 密钥配置
 
-| 密钥 | 获取地址 | 解锁数据 |
-|------|---------|---------|
-| FRED API Key | [fred.stlouisfed.org/docs/api](https://fred.stlouisfed.org/docs/api/api_key.html) | 联邦储备经济数据、VIX、CPI |
-| NASA FIRMS Map Key | [firms.modaps.eosdis.nasa.gov](https://firms.modaps.eosdis.nasa.gov/api/area/) | 卫星火灾检测 |
-| EIA API Key | [api.eia.gov/register](https://www.eia.gov/opendata/register.php) | 能源数据 |
+#### 免费 API 密钥（推荐，3 分钟注册）
 
-### 可选 API 密钥
+| 密钥 | 获取地址 | 解锁数据 | 费用 |
+|------|---------|---------|------|
+| FRED API Key | [fred.stlouisfed.org/docs/api](https://fred.stlouisfed.org/docs/api/api_key.html) | 联邦储备经济数据、VIX、CPI | 🆓 免费 |
+| NASA FIRMS Map Key | [firms.modaps.eosdis.nasa.gov](https://firms.modaps.eosdis.nasa.gov/api/area/) | 卫星火灾检测 | 🆓 免费 |
+| EIA API Key | [api.eia.gov/register](https://www.eia.gov/opendata/register.php) | 能源数据 | 🆓 免费 |
+| SAFECAST API | [api.safecast.org](https://api.safecast.org/) | 辐射监测数据 | 🆓 免费 |
+| CISA KEV | [cisa.gov/known-exploited-vulnerabilities-catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) | 已知漏洞目录 | 🆓 免费 |
+| GDELT API | [api.gdeltproject.org](https://www.gdeltproject.org/) | 全球事件数据 | 🆓 免费 |
+| WHO API | [who.int/data/gho](https://www.who.int/data/gho) | 全球健康数据 | 🆓 免费 |
 
-| 密钥 | 获取地址 | 解锁数据 |
-|------|---------|---------|
-| ACLED Email + Password | [acleddata.com/register](https://acleddata.com/register/) | 武装冲突事件 |
-| AIS Stream API Key | [aisstream.io](https://aisstream.io/) | 船舶追踪 |
-| Cloudflare API Token | [dash.cloudflare.com](https://dash.cloudflare.com/profile/api-tokens) | 互联网中断监测 |
-| ADSB API Key | [RapidAPI](https://rapidapi.com/adsbexchange/api/adsbexchange-com1) | 详细航班追踪 |
+#### 付费 API 密钥（可选）
+
+| 密钥 | 获取地址 | 解锁数据 | 费用 |
+|------|---------|---------|------|
+| ACLED Email + Password | [acleddata.com/register](https://acleddata.com/register/) | 武装冲突事件 | 💰 付费 |
+| AIS Stream API Key | [aisstream.io](https://aisstream.io/) | 船舶追踪 | 💰 付费 |
+| ADSB API Key | [RapidAPI](https://rapidapi.com/adsbexchange/api/adsbexchange-com1) | 详细航班追踪 | 💰 付费 |
+| OpenSky Network | [opensky-network.org/api](https://opensky-network.org/api/) | 航班追踪数据 | 💰 付费/受限免费 |
+
+#### 需 Cloudflare 账户（免费套餐可用）
+
+| 密钥 | 获取地址 | 解锁数据 | 费用 |
+|------|---------|---------|------|
+| Cloudflare API Token | [dash.cloudflare.com](https://dash.cloudflare.com/profile/api-tokens) | 互联网中断监测 | 🆓 免费套餐可用 |
 
 ### LLM 配置
 
@@ -361,19 +386,6 @@ crucix-cf-pages/
 Crucix 把它们汇聚到一处。不在付费墙后，不在企业平台中，不需要安全许可。只需开放数据，在你自己的机器上聚合和交叉关联，每 15 分钟更新一次。
 
 为任何想了解世界正在发生什么的人而构建——研究人员、记者、交易员、OSINT 分析师，或者只是相信信息获取不应取决于预算的好奇者。
-
----
-
-## 🙏 致谢
-
-本项目是 [Crucix](https://github.com/calesthio/Crucix) 的复刻版本，感谢原作者 [calesthio](https://github.com/calesthio) 创造了如此出色的 OSINT 情报终端。
-
-原项目的创新设计和架构为这个 CF Pages 版本奠定了坚实基础。我们在原版基础上进行了以下改进：
-- 适配 Cloudflare Pages 无服务器架构
-- 添加完整中英双语支持
-- 新增内容翻译功能（Google/Microsoft 翻译）
-- 将 Bot 从轮询模式改为 Webhook 模式
-- 优化前端性能和响应式设计
 
 ---
 
