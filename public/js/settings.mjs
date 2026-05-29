@@ -151,7 +151,7 @@ function updateTranslationFields() {
   const baseUrlGroup = $('#translationBaseUrlGroup');
 
   // Show API key field only for providers that need it
-  if (['google', 'microsoft'].includes(provider)) {
+  if (['google', 'microsoft', 'deepl'].includes(provider)) {
     apiKeyGroup.style.display = 'block';
   } else {
     apiKeyGroup.style.display = 'none';

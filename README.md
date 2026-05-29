@@ -302,7 +302,10 @@ npm run deploy
 2. 选择翻译提供商：
    - **Google (Free, No API Key)** - 默认推荐，无需配置
    - **Google (API Key)** - 需要 Google Cloud API Key
+   - **Microsoft (Free)** - 免费使用，无需 API Key
    - **Microsoft (API Key)** - 需要 Azure API Key
+   - **DeepL (Free, No API Key)** - 免费使用，每月 50 万字符额度
+   - **DeepL (API Key)** - 需要 DeepL Pro API Key
    - **MyMemory (Free, No API Key)** - 免费翻译服务
    - **LibreTranslate (Free)** - 免费开源翻译，可自定义服务器
 3. （可选）如需使用付费服务，输入对应 API Key
