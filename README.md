@@ -3,7 +3,6 @@
 **你的专属情报终端。27 个数据源。一个命令。零云依赖。**
 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/fplj-fplj/crucix-cf-pages)
-[![GitHub Actions](https://github.com/fplj-fplj/crucix-cf-pages/actions/workflows/deploy.yml/badge.svg)](https://github.com/fplj-fplj/crucix-cf-pages/actions)
 [![Node.js 22+](https://img.shields.io/badge/node-22%2B-brightgreen)](#前置要求)
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
 
