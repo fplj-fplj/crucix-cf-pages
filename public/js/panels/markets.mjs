@@ -14,11 +14,15 @@ function createMarketItem(item) {
   const el = document.createElement('div');
   el.className = 'market-item';
 
+  const displayValue = item.value !== null && item.value !== undefined ? item.value.toLocaleString() : 'N/A';
+  const displayChange = item.change !== null && item.change !== undefined ? item.change.toFixed(2) : '0.00';
+  const displayChangePct = item.changePercent !== null && item.changePercent !== undefined ? item.changePercent.toFixed(2) : '0.00';
+
   el.innerHTML = `
     <div class="market-name">${item.name}</div>
-    <div class="market-price">${item.value.toLocaleString()}</div>
-    <div class="market-change ${changeClass(item.change)}">
-      ${changeSign(item.change)}${item.change.toFixed(2)} (${changeSign(item.changePercent)}${item.changePercent.toFixed(2)}%)
+    <div class="market-price">${displayValue}</div>
+    <div class="market-change ${changeClass(item.change ?? 0)}">
+      ${changeSign(item.change ?? 0)}${displayChange} (${changeSign(item.changePercent ?? 0)}${displayChangePct}%)
     </div>
   `;
 

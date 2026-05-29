@@ -37,26 +37,27 @@ export async function runSweep(kv: KVNamespace, config: Settings): Promise<Brief
   });
 
   const keys = config.apiKeys ?? {};
+  const telegramToken = config.telegram?.botToken ?? '';
 
   const sourcePromises: Promise<SourceResult>[] = [
-    fetchFirmsData(keys.firms ?? ''),
+    fetchFirmsData(keys.FIRMS_MAP_KEY ?? ''),
     fetchOpenSkyData(),
-    fetchAdsbData(keys.adsb ?? ''),
-    fetchFredData(keys.fred ?? ''),
-    fetchEiaData(keys.eia ?? ''),
+    fetchAdsbData(keys.ADSB_API_KEY ?? ''),
+    fetchFredData(keys.FRED_API_KEY ?? ''),
+    fetchEiaData(keys.EIA_API_KEY ?? ''),
     fetchYahooData(),
-    fetchAcledData(keys.acledEmail ?? '', keys.acledPassword ?? ''),
+    fetchAcledData(keys.ACLED_EMAIL ?? '', keys.ACLED_PASSWORD ?? ''),
     fetchGdeltData(),
     fetchOfacData(),
     fetchSafecastData(),
     fetchEpaRadnetData(),
     fetchWhoData(),
-    fetchAisData(keys.ais ?? ''),
+    fetchAisData(keys.AISSTREAM_API_KEY ?? ''),
     fetchCisaKevData(),
-    fetchCfRadarData(keys.cfRadar ?? ''),
+    fetchCfRadarData(keys.CLOUDFLARE_API_TOKEN ?? ''),
     fetchCelesttrakData(),
     fetchRssData(),
-    fetchTelegramOsintData(keys.telegramBot ?? '', keys.telegramChannels),
+    fetchTelegramOsintData(telegramToken, keys.TELEGRAM_CHANNELS),
     fetchUsDebtData(),
     fetchGscpiData(),
   ];

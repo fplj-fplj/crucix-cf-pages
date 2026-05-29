@@ -33,7 +33,6 @@ async function initialPoll() {
   if (!data) return;
   lastTimestamp = data.timestamp;
   dispatchUpdate(data);
-  stopInitialPoll();
   startRegularPoll();
 }
 
@@ -45,13 +44,14 @@ function stopInitialPoll() {
 }
 
 function startRegularPoll() {
+  stopInitialPoll();
   if (pollTimer !== null) return;
   pollTimer = setInterval(poll, POLL_INTERVAL);
 }
 
 export function startPolling() {
+  if (pollTimer !== null) return;
   initialPoll();
-  initialTimer = setInterval(initialPoll, INITIAL_INTERVAL);
 }
 
 export function stopPolling() {
