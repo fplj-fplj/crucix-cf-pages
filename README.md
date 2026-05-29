@@ -254,6 +254,34 @@ npm run dev
 npm run deploy
 ```
 
+#### GitHub Actions 自动部署
+
+**默认已关闭** - 为避免频繁的部署失败通知，GitHub Actions 自动部署目前已设置为手动触发模式。
+
+**如何启用自动部署：**
+
+1. 打开 `.github/workflows/deploy.yml` 文件
+2. 修改 `on` 部分，取消注释 `push` 事件：
+
+```yaml
+on:
+  push:
+    branches: [main]  # 取消注释这两行以启用自动部署
+  workflow_dispatch:
+```
+
+3. 提交并推送更改
+
+**如何手动触发部署：**
+- 访问 GitHub 仓库 → Actions → Deploy to Cloudflare Pages → Run workflow
+
+**注意事项：**
+- 启用自动部署前，请确保已正确配置以下 Secrets：
+  - `CF_API_TOKEN` - Cloudflare API Token
+  - `CF_ACCOUNT_ID` - Cloudflare Account ID
+  - `KV_BRIEFING_ID` - BRIEFING_KV 命名空间 ID（可选）
+  - `KV_CONFIG_ID` - CONFIG_KV 命名空间 ID（可选）
+
 ---
 
 ## ⚙️ 配置指南
@@ -298,20 +326,16 @@ npm run deploy
 
 ### 翻译配置
 
+本项目仅使用 **DeepL** 翻译服务：
+
 1. 开启"翻译非中文内容"
-2. 选择翻译提供商：
-   - **Google (Free, No API Key)** - 默认推荐，无需配置
-   - **Google (API Key)** - 需要 Google Cloud API Key
-   - **Microsoft (Free)** - 免费使用，无需 API Key
-   - **Microsoft (API Key)** - 需要 Azure API Key
-   - **DeepL (Free, No API Key)** - 免费使用，每月 50 万字符额度
-   - **DeepL (API Key)** - 需要 DeepL Pro API Key
-   - **MyMemory (Free, No API Key)** - 免费翻译服务
-   - **LibreTranslate (Free)** - 免费开源翻译，可自定义服务器
-3. （可选）如需使用付费服务，输入对应 API Key
+2. 选择翻译模式：
+   - **DeepL (Free, No API Key)** - 默认推荐，每月 50 万字符免费额度
+   - **DeepL (API Key)** - 需要 DeepL Pro API Key（更高额度和优先级）
+3. （可选）如需使用 DeepL Pro，输入 API Key
 4. 保存即可使用
 
-*注：选择免费翻译服务时无需输入 API Key！*
+*注：选择免费模式时无需输入 API Key！*
 
 ### Telegram Bot 配置
 

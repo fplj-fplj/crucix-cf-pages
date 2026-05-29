@@ -150,19 +150,15 @@ function updateTranslationFields() {
   const apiKeyGroup = $('#translationApiKeyGroup');
   const baseUrlGroup = $('#translationBaseUrlGroup');
 
-  // Show API key field only for providers that need it
-  if (['google', 'microsoft', 'deepl'].includes(provider)) {
+  // Show API key field only for DeepL API Key mode
+  if (provider === 'deepl') {
     apiKeyGroup.style.display = 'block';
   } else {
     apiKeyGroup.style.display = 'none';
   }
 
-  // Show base URL field only for LibreTranslate
-  if (provider === 'libretranslate') {
-    baseUrlGroup.style.display = 'block';
-  } else {
-    baseUrlGroup.style.display = 'none';
-  }
+  // Hide base URL field (no longer needed)
+  baseUrlGroup.style.display = 'none';
 }
 
 function setBotStatus(elementId, status) {
