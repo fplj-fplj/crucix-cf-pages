@@ -14,6 +14,8 @@ import { updateSweepDelta } from './panels/sweep-delta.mjs';
 import { updateSignalGuide } from './panels/signal-guide.mjs';
 import { initRegionFilter } from './region-filter.mjs';
 import { initVisualsMode } from './visuals-mode.mjs';
+import { initGlobe, updateGlobeData, rotateToRegion } from './globe.mjs';
+import { initMap, updateMapData, zoomToRegion } from './map.mjs';
 
 const state = {
   currentRegion: 'WORLD',
@@ -37,6 +39,8 @@ function handleBriefingUpdate(e) {
   updateCrossSignals(data.crossSignals);
   updateSweepDelta(data.sweepDelta);
   updateSignalGuide(data.signalGuide);
+  updateGlobeData(data);
+  updateMapData(data);
 }
 
 function bindLanguageToggle() {
@@ -78,20 +82,6 @@ function bindViewToggle() {
   });
 }
 
-async function initGlobe() {
-  try {
-    const mod = await import('./globe.mjs');
-    if (mod.initGlobe) await mod.initGlobe();
-  } catch {}
-}
-
-async function initMap() {
-  try {
-    const mod = await import('./map.mjs');
-    if (mod.initMap) await mod.initMap();
-  } catch {}
-}
-
 export async function initDashboard() {
   await initI18n();
 
@@ -99,6 +89,16 @@ export async function initDashboard() {
   window.addEventListener('localechange', () => {
     applyTranslations();
     if (state.currentBriefing) handleBriefingUpdate({ detail: state.currentBriefing });
+  });
+
+  window.addEventListener('globe:rotate', (e) => {
+    const { region } = e.detail;
+    if (region) rotateToRegion(region);
+  });
+
+  window.addEventListener('map:zoom', (e) => {
+    const { region } = e.detail;
+    if (region) zoomToRegion(region);
   });
 
   await runBootSequence();
@@ -109,8 +109,8 @@ export async function initDashboard() {
   bindSettingsButton();
   bindViewToggle();
 
-  await initGlobe();
-  await initMap();
+  initGlobe();
+  initMap();
 
   startPolling();
 }

@@ -1,9 +1,9 @@
-import type { Env, Settings, BriefingData, DeltaData, Alert, SourceResult } from '../../lib/types';
-import { getSweepStatus, setSweepStatus, getSettings, getBriefing, setBriefing, setDelta } from '../../lib/kv';
-import { runSweep, computeDelta } from '../../lib/sweep/orchestrator';
-import { classifyAlerts } from '../../lib/alerts/classifier';
-import { deduplicateAlerts } from '../../lib/alerts/dedup';
-import { addAlertsToHistory } from '../../lib/alerts/history';
+import type { Env, Settings, BriefingData, DeltaData, Alert, SourceResult } from '../types';
+import { getSweepStatus, setSweepStatus, getSettings, getBriefing, setBriefing, setDelta } from '../kv';
+import { runSweep, computeDelta } from '../sweep/orchestrator';
+import { classifyAlerts } from '../alerts/classifier';
+import { deduplicateAlerts } from '../alerts/dedup';
+import { addAlertsToHistory } from '../alerts/history';
 
 async function pushToTelegram(botToken: string, chatId: string, alerts: Alert[]): Promise<void> {
   if (alerts.length === 0) return;
@@ -39,9 +39,9 @@ async function pushToDiscord(webhookUrl: string, alerts: Alert[]): Promise<void>
   } catch {}
 }
 
-export async function onRequestPost(context: { env: Env; request: Request }) {
+export async function handleSweepRequest(request: Request, env: Env) {
   try {
-    const status = await getSweepStatus(context.env.BRIEFING_KV);
+    const status = await getSweepStatus(env.BRIEFING_KV);
 
     if (status?.isSweeping) {
       return new Response(JSON.stringify({ status: 'sweep_in_progress' }), {
@@ -50,7 +50,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
       });
     }
 
-    await setSweepStatus(context.env.BRIEFING_KV, {
+    await setSweepStatus(env.BRIEFING_KV, {
       lastSweep: status?.lastSweep ?? new Date().toISOString(),
       nextSweep: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
       sourceCount: status?.sourceCount ?? 0,
@@ -59,7 +59,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
     });
 
     try {
-      const settings = await getSettings(context.env.CONFIG_KV, context.env);
+      const settings = await getSettings(env.CONFIG_KV, env);
       if (!settings) {
         return new Response(JSON.stringify({ status: 'error', message: 'No settings configured' }), {
           status: 400,
@@ -67,21 +67,21 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
         });
       }
 
-      const previousBriefing = await getBriefing(context.env.BRIEFING_KV);
+      const previousBriefing = await getBriefing(env.BRIEFING_KV);
 
       const { briefing, results } = await runSweep(settings);
       
       const delta: DeltaData = computeDelta(briefing, previousBriefing);
       briefing.sweepDelta = delta;
       
-      await setBriefing(context.env.BRIEFING_KV, briefing);
-      await setDelta(context.env.BRIEFING_KV, delta);
+      await setBriefing(env.BRIEFING_KV, briefing);
+      await setDelta(env.BRIEFING_KV, delta);
 
       let alerts = await classifyAlerts(delta, briefing, settings?.llm);
       alerts = deduplicateAlerts(alerts);
 
       if (alerts.length > 0) {
-        await addAlertsToHistory(context.env.BRIEFING_KV, alerts);
+        await addAlertsToHistory(env.BRIEFING_KV, alerts);
       }
 
       if (settings?.telegram) {
@@ -92,7 +92,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
       }
 
       const healthySources = results.filter((r: SourceResult) => r.success).length;
-      await setSweepStatus(context.env.BRIEFING_KV, {
+      await setSweepStatus(env.BRIEFING_KV, {
         lastSweep: new Date().toISOString(),
         nextSweep: new Date(Date.now() + (settings?.refreshInterval ?? 15) * 60 * 1000).toISOString(),
         sourceCount: results.length,
@@ -105,7 +105,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
         headers: { 'Content-Type': 'application/json' },
       });
     } catch (err) {
-      await setSweepStatus(context.env.BRIEFING_KV, {
+      await setSweepStatus(env.BRIEFING_KV, {
         lastSweep: status?.lastSweep ?? new Date().toISOString(),
         nextSweep: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
         sourceCount: status?.sourceCount ?? 0,

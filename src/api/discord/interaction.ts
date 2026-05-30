@@ -1,12 +1,8 @@
-import type { Env } from '../../../lib/types';
-import { getSettings } from '../../../lib/kv';
-import { handleDiscordCommand } from '../../../lib/bots/discord';
+import type { Env } from '../../types';
+import { getSettings } from '../../kv';
+import { handleDiscordCommand } from '../../bots/discord';
 
-export async function onRequestPost(context: {
-  env: Env;
-  request: Request;
-}): Promise<Response> {
-  const { env, request } = context;
+export async function handleDiscordInteraction(request: Request, env: Env): Promise<Response> {
   const body = (await request.json()) as {
     type?: number;
     data?: { name?: string };

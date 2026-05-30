@@ -1,9 +1,9 @@
-import type { Env, LLMConfig, LLMProvider } from '../../lib/types';
-import { fetchAvailableModels } from '../../lib/llm/provider';
+import type { Env, LLMConfig, LLMProvider } from '../types';
+import { fetchAvailableModels } from '../llm/provider';
 
-export async function onRequestGet(context: { env: Env; request: Request }) {
+export async function handleModelsRequest(request: Request, env: Env) {
   try {
-    const url = new URL(context.request.url);
+    const url = new URL(request.url);
     const provider = url.searchParams.get('provider') as LLMProvider | null;
     const apiKey = url.searchParams.get('apiKey');
 

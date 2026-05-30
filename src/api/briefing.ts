@@ -1,13 +1,13 @@
-import type { Env } from '../../lib/types';
-import { getBriefing } from '../../lib/kv';
+import type { Env } from '../types';
+import { getBriefing } from '../kv';
 
-export async function onRequestGet(context: { env: Env; request: Request }) {
+export async function handleBriefingRequest(request: Request, env: Env) {
   try {
-    const briefing = await getBriefing(context.env.BRIEFING_KV);
+    const briefing = await getBriefing(env.BRIEFING_KV);
 
     if (!briefing) {
       return new Response(
-        JSON.stringify({ status: 'no_data', message: 'No market data available' }),
+        JSON.stringify({ status: 'no_data', message: 'No sweep data available' }),
         {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
@@ -15,7 +15,7 @@ export async function onRequestGet(context: { env: Env; request: Request }) {
       );
     }
 
-    return new Response(JSON.stringify({ status: 'ok', data: briefing.markets }), {
+    return new Response(JSON.stringify({ status: 'ok', data: briefing }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

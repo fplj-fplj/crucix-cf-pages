@@ -1,5 +1,5 @@
-import type { Env } from '../../lib/types';
-import { translateText } from '../../lib/llm/translator';
+import type { Env } from '../types';
+import { translateText } from '../llm/translator';
 
 interface TranslateRequest {
   text: string;
@@ -12,9 +12,9 @@ interface TranslateRequest {
   };
 }
 
-export async function onRequestPost(context: { env: Env; request: Request }) {
+export async function handleTranslateRequest(request: Request, env: Env) {
   try {
-    const body = (await context.request.json()) as TranslateRequest;
+    const body = (await request.json()) as TranslateRequest;
 
     if (!body.text || !body.targetLang) {
       return new Response(

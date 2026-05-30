@@ -8,20 +8,14 @@ const REGION_COORDS = {
 };
 
 function rotateGlobe(region) {
-  const coords = REGION_COORDS[region];
-  if (!coords) return;
-
   window.dispatchEvent(new CustomEvent('globe:rotate', {
-    detail: { lat: coords.lat, lng: coords.lng }
+    detail: { region }
   }));
 }
 
 function zoomMap(region) {
-  const coords = REGION_COORDS[region];
-  if (!coords) return;
-
   window.dispatchEvent(new CustomEvent('map:zoom', {
-    detail: { lat: coords.lat, lng: coords.lng, zoom: coords.zoom }
+    detail: { region }
   }));
 }
 

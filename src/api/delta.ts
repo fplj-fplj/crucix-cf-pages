@@ -1,9 +1,9 @@
-import type { Env } from '../../lib/types';
-import { getDelta } from '../../lib/kv';
+import type { Env } from '../types';
+import { getDelta } from '../kv';
 
-export async function onRequestGet(context: { env: Env; request: Request }) {
+export async function handleDeltaRequest(request: Request, env: Env) {
   try {
-    const delta = await getDelta(context.env.BRIEFING_KV);
+    const delta = await getDelta(env.BRIEFING_KV);
 
     if (!delta) {
       return new Response(

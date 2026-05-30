@@ -1,6 +1,6 @@
 # Crucix CF Workers
 
-**你的专属情报终端。27 个数据源。一个命令。零云依赖。**
+**你的专属情报终端。27 个数据源。一条命令。零云依赖。**
 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/fplj-fplj/crucix-cf-pages)
 [![Node.js 22+](https://img.shields.io/badge/node-22%2B-brightgreen)](#前置要求)
@@ -47,7 +47,7 @@
 
 ### 🤖 双 Bot 系统（Webhook 模式）
 
-**Telegram Bot：**
+**Telegram Bot**:
 
 | 命令 | 功能 |
 |------|------|
@@ -59,7 +59,7 @@
 | `/unmute` | 恢复告警 |
 | `/help` | 帮助信息 |
 
-**Discord Bot：**
+**Discord Bot**:
 
 | 命令 | 功能 |
 |------|------|
@@ -83,6 +83,7 @@
 | MiniMax | MiniMax-Text-01 | ✅ 需要 |
 | Mistral | mistral-large | ✅ 需要 |
 | Grok | grok-3 | ✅ 需要 |
+| **Custom (OpenAI 兼容)** | - | ✅ 需配置 |
 
 LLM 功能：AI 交易想法生成、智能告警评估（FLASH/PRIORITY/ROUTINE）、语义去重
 
@@ -95,73 +96,64 @@ LLM 功能：AI 交易想法生成、智能告警评估（FLASH/PRIORITY/ROUTINE
 ### 📝 内容翻译（可选）
 
 自动翻译非中文内容，支持：
-- **Google 翻译 API**
-- **Microsoft 翻译 API**
-- 可开关，在设置页面配置
+- **Google (Free)** - 默认推荐，无需配置
+- **Microsoft (Free)** - 无需配置
+- **DeepL (Free)** - 每月 50 万字符免费额度
+- **DeepL (API Key)** - 需要 DeepL Pro API Key（更高额度）
+- **MyMemory (Free)** - 免费翻译服务
+- **LibreTranslate (Free)** - 免费开源翻译，可自定义服务器
 
 ---
 
 ## 🚀 Cloudflare Workers 快速部署
 
-### 方式一：一键部署（快速开始）
+### 第一步：创建 KV 命名空间
 
-[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/fplj-fplj/crucix-cf-pages)
+在 Cloudflare Dashboard 中创建两个 KV 命名空间：
+1. `BRIEFING_KV` - 用于存储扫描结果
+2. `CONFIG_KV` - 用于存储配置
 
-点击上方按钮快速开始部署。部署前需要先创建 KV 命名空间并配置 `wrangler.toml`。
+复制这两个命名空间的 ID。
 
----
+### 第二步：配置 wrangler.toml
 
-### 方式二：手动部署（推荐，更可控）
-
-#### 第一步：Fork 仓库
-
-点击 GitHub 页面右上角 **Fork**，创建你自己的副本。
-
-#### 第二步：创建 Cloudflare KV 命名空间
-
-1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)
-2. 进入 **Workers & Pages** → **KV** → **Create a namespace**
-3. 创建两个命名空间：
-   - `BRIEFING_KV`（用于存储扫描结果）
-   - `CONFIG_KV`（用于存储配置）
-4. 复制两个命名空间的 **ID**
-
-#### 第三步：配置 wrangler.toml
-
-在 fork 的仓库中编辑 `wrangler.toml`，填入你的 KV 命名空间 ID：
+编辑 `wrangler.toml`，添加 KV 绑定：
 
 ```toml
+name = "crucix-cf-pages"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
 [[kv_namespaces]]
 binding = "BRIEFING_KV"
-id = "YOUR_BRIEFING_KV_ID"  # 替换这里
+id = "你的-BRIEFING_KV-命名空间-ID"
 
 [[kv_namespaces]]
 binding = "CONFIG_KV"
-id = "YOUR_CONFIG_KV_ID"    # 替换这里
+id = "你的-CONFIG_KV-命名空间-ID"
+
+[triggers]
+crons = ["*/15 * * * *"]
+
+[assets]
+directory = "public"
 ```
 
-#### 第四步：部署到 Cloudflare Workers
-
-在本地运行：
+### 第三步：部署
 
 ```bash
 npm install
 npm run deploy
 ```
 
-或者使用 GitHub Actions 自动部署（见下文）。
-
-#### 第五步：访问应用
-
-部署完成后访问 `https://your-worker-name.your-subdomain.workers.dev/`
-
 ---
 
-### 方式三：使用 GitHub Actions 自动部署
+### 使用 GitHub Actions 自动部署
 
 #### 第一步：Fork 仓库 + 创建 KV 命名空间
 
-同方式二的第一步和第二步。
+同第一步和第二步。
 
 #### 第二步：配置 GitHub Secrets
 
@@ -174,19 +166,17 @@ npm run deploy
 |------------|------|
 | `CF_ACCOUNT_ID` | Cloudflare 账户 ID（Dashboard 右下角） |
 | `CF_API_TOKEN` | Cloudflare API Token（创建 Token，权限：Account:Workers KV:Edit，Worker Scripts:Edit） |
+| `KV_BRIEFING_ID` | BRIEFING_KV 命名空间 ID（可选） |
+| `KV_CONFIG_ID` | CONFIG_KV 命名空间 ID（可选） |
 
-#### 第三步：配置 wrangler.toml
+#### 第三步：开启自动构建（可选）
 
-在仓库中编辑 `wrangler.toml`，填入你的 KV 命名空间 ID。
+**🔒 默认关闭自动构建** — 为了避免频繁的部署失败通知，默认仅支持手动触发部署。
 
-#### 第四步：自动部署
-
-**🔒 默认关闭自动构建** - 为了避免频繁的部署失败通知，默认仅支持手动触发部署。
-
-**如何手动触发部署：**
+**如何手动触发部署**:
 - 访问 GitHub 仓库 → Actions → Deploy to Cloudflare Workers → Run workflow
 
-**如何开启自动构建（可选）：**
+**如何开启自动构建（可选）**:
 1. 打开 `.github/workflows/deploy.yml` 文件
 2. 找到 `on:` 部分，取消注释以下两行：
    ```yaml
@@ -200,21 +190,9 @@ npm run deploy
    ```
 3. 提交并推送更改
 
-**开启后效果：**
-- 每次推送到 `main` 分支时，GitHub Actions 将自动运行 TypeScript 检查并部署到 Cloudflare Workers
-
-**注意事项：**
-- 确保已正确配置以下 Secrets：
-  - `CF_API_TOKEN` - Cloudflare API Token
-  - `CF_ACCOUNT_ID` - Cloudflare Account ID
-- （可选）如果已提前创建 KV 命名空间，添加以下 Secrets 以避免重新创建：
-  - `KV_BRIEFING_ID` - BRIEFING_KV 命名空间 ID
-  - `KV_CONFIG_ID` - CONFIG_KV 命名空间 ID
-- `wrangler.toml` 中的 KV 占位符会在部署时自动替换
-
 ---
 
-### 方式四：本地开发
+### 本地开发
 
 #### 前置要求
 
@@ -230,24 +208,9 @@ cd crucix-cf-pages
 npm install
 ```
 
-#### 创建 KV 命名空间（本地测试）
+#### 配置 KV 命名空间（本地测试）
 
-```bash
-wrangler kv namespace create BRIEFING_KV
-wrangler kv namespace create CONFIG_KV
-```
-
-将输出的 ID 填入 `wrangler.toml`：
-
-```toml
-[[kv_namespaces]]
-binding = "BRIEFING_KV"
-id = "YOUR_BRIEFING_KV_ID"  # 替换这里
-
-[[kv_namespaces]]
-binding = "CONFIG_KV"
-id = "YOUR_CONFIG_KV_ID"    # 替换这里
-```
+编辑 `wrangler.toml`，添加你的 KV 命名空间 ID。
 
 #### 本地开发
 
@@ -257,10 +220,10 @@ npm run dev
 
 访问 `http://localhost:8787`，使用 wrangler 本地开发环境。
 
-#### 生产部署
+#### 类型检查
 
 ```bash
-npm run deploy
+npm run typecheck
 ```
 
 ---
@@ -278,9 +241,9 @@ npm run deploy
 | FRED API Key | [fred.stlouisfed.org/docs/api](https://fred.stlouisfed.org/docs/api/api_key.html) | 联邦储备经济数据、VIX、CPI | 🆓 免费 |
 | NASA FIRMS Map Key | [firms.modaps.eosdis.nasa.gov](https://firms.modaps.eosdis.nasa.gov/api/area/) | 卫星火灾检测 | 🆓 免费 |
 | EIA API Key | [api.eia.gov/register](https://www.eia.gov/opendata/register.php) | 能源数据 | 🆓 免费 |
-| SAFECAST API | [api.safecast.org](https://api.safecast.org/) | 辐射监测数据 | 🆓 免费 |
+| Safecast API | [api.safecast.org](https://api.safecast.org/) | 辐射监测数据 | 🆓 免费 |
 | CISA KEV | [cisa.gov/known-exploited-vulnerabilities-catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) | 已知漏洞目录 | 🆓 免费 |
-| GDELT API | [api.gdeltproject.org](https://www.gdeltproject.org/) | 全球事件数据 | 🆓 免费 |
+| GDELT API | [api.gdeltproject.org](https://api.gdeltproject.org/) | 全球事件数据 | 🆓 免费 |
 | WHO API | [who.int/data/gho](https://www.who.int/data/gho) | 全球健康数据 | 🆓 免费 |
 
 #### 付费 API 密钥（可选）
@@ -305,22 +268,14 @@ npm run deploy
 3. 选择模型（可点击"获取模型列表"自动获取可用模型，或手动输入）
 4. 保存后即可使用 AI 交易想法和智能告警评估
 
+支持 **Custom (OpenAI 兼容)** 提供商，可配置：
+- 自定义 Base URL
+- 自定义模型名称
+- 自定义 API Key
+
 ### 翻译配置
 
-本项目提供多种免费翻译服务（均无需 API Key）：
-
-1. 开启"翻译非中文内容"
-2. 选择翻译提供商：
-   - **Google (Free)** - 默认推荐，无需配置
-   - **Microsoft (Free)** - 无需配置
-   - **DeepL (Free)** - 每月 50 万字符免费额度
-   - **DeepL (API Key)** - 需要 DeepL Pro API Key（更高额度）
-   - **MyMemory (Free)** - 免费翻译服务
-   - **LibreTranslate (Free)** - 免费开源翻译，可自定义服务器
-3. （可选）如需使用 DeepL Pro，输入 API Key
-4. 保存即可使用
-
-*注：除 DeepL Pro 外，所有翻译服务均无需 API Key！*
+见上方功能特性说明。
 
 ### Telegram Bot 配置
 
@@ -353,20 +308,19 @@ crucix-cf-pages/
 │   │   ├── markets.ts     # GET /api/markets
 │   │   ├── settings.ts    # GET/PUT /api/settings
 │   │   ├── models.ts      # GET /api/models
-│   │   ├── health.ts     # GET /api/health
+│   │   ├── health.ts      # GET /api/health
 │   │   ├── translate.ts   # POST /api/translate
 │   │   ├── telegram/      # Telegram Webhook
 │   │   └── discord/       # Discord Interaction
-│   ├── utils/            # 工具模块
-│   │   ├── sources/       # 20 个数据源适配器
-│   │   ├── sweep/         # 扫描编排 + 数据合成
-│   │   ├── delta/         # 增量计算引擎
-│   │   ├── llm/           # LLM 集成层（8 提供商）
-│   │   ├── alerts/        # 告警系统
-│   │   ├── bots/          # Bot 逻辑
-│   │   └── utils/         # 工具函数
-│   └── workers/           # Worker 相关
-│       └── cron-sweep.ts  # Cron Trigger 定时扫描
+│   ├── sources/           # 27 个数据源适配器
+│   ├── sweep/             # 扫描编排 + 数据合成
+│   ├── delta/             # 增量计算引擎
+│   ├── llm/               # LLM 集成层（8+提供商）
+│   ├── alerts/            # 告警系统
+│   ├── bots/              # Bot 逻辑
+│   ├── workers/           # Worker 相关
+│   │   └── cron-sweep.ts  # Cron Trigger 定时扫描
+│   └── kv.ts              # KV 存储工具
 ├── public/               # 静态资源
 │   ├── index.html         # 主仪表盘
 │   ├── settings.html      # 设置页面
@@ -386,7 +340,7 @@ crucix-cf-pages/
 |------|------|
 | 前端框架 | Vanilla JS（零依赖） |
 | 3D 可视化 | Globe.gl |
-| 地图 | Leaflet + CartoDB Dark Matter |
+| 地图 | D3 + Natural Earth |
 | 后端 | Cloudflare Workers |
 | 数据存储 | Cloudflare KV |
 | 定时任务 | Workers Cron Triggers |
@@ -398,7 +352,7 @@ crucix-cf-pages/
 
 ## ⚠️ 代币/资产声明
 
-> [!WARNING]
+> **警告**
 > **Crucix CF Workers 未发行任何官方代币、币种、NFT、空投、预售或任何区块链资产。**
 > 任何使用 Crucix 名称、Logo 或品牌标识的代币或数字资产均与 Crucix 无关联或背书。
 > 请勿购买、推广、连接钱包领取、签署交易或基于第三方帖子、DM 或网站发送资金。

@@ -1,10 +1,6 @@
-import type { Env } from '../../../lib/types';
+import type { Env } from '../../types';
 
-export async function onRequestPost(context: {
-  env: Env;
-  request: Request;
-}): Promise<Response> {
-  const { request } = context;
+export async function handleDiscordRegister(request: Request, env: Env): Promise<Response> {
   const body = (await request.json()) as {
     botToken?: string;
     applicationId?: string;

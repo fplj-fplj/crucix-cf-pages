@@ -1,13 +1,8 @@
-import type { Env } from '../../../lib/types';
-import { getSettings } from '../../../lib/kv';
-import { handleTelegramCommand, sendTelegramMessage } from '../../../lib/bots/telegram';
+import type { Env } from '../../types';
+import { getSettings } from '../../kv';
+import { handleTelegramCommand, sendTelegramMessage } from '../../bots/telegram';
 
-export async function onRequestPost(context: {
-  env: Env;
-  request: Request;
-  waitUntil(promise: Promise<unknown>): void;
-}): Promise<Response> {
-  const { env, request } = context;
+export async function handleTelegramWebhook(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const body = (await request.json()) as {
     message?: { text?: string; chat?: { id?: number } };
   };
@@ -25,6 +20,6 @@ export async function onRequestPost(context: {
     return new Response('OK', { status: 200 });
   }
   const reply = await handleTelegramCommand(command, args, env.BRIEFING_KV, config);
-  context.waitUntil(sendTelegramMessage(config.telegram.botToken, chatId, reply));
+  ctx.waitUntil(sendTelegramMessage(config.telegram.botToken, chatId, reply));
   return new Response('OK', { status: 200 });
 }

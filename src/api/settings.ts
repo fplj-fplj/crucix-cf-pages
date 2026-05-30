@@ -1,5 +1,5 @@
-import type { Env, Settings } from '../../lib/types';
-import { getSettings, setSettings } from '../../lib/kv';
+import type { Env, Settings } from '../types';
+import { getSettings, setSettings } from '../kv';
 
 function maskApiKey(key: string): string {
   if (!key || key.length <= 4) return '****';
@@ -45,9 +45,9 @@ function maskSettings(settings: Settings): Record<string, unknown> {
   return masked;
 }
 
-export async function onRequestGet(context: { env: Env; request: Request }) {
+export async function handleSettingsGet(request: Request, env: Env) {
   try {
-    const settings = await getSettings(context.env.CONFIG_KV, context.env);
+    const settings = await getSettings(env.CONFIG_KV, env);
 
     if (!settings) {
       return new Response(
@@ -77,23 +77,24 @@ export async function onRequestGet(context: { env: Env; request: Request }) {
   }
 }
 
-export async function onRequestPut(context: { env: Env; request: Request }) {
+export async function handleSettingsPut(request: Request, env: Env) {
   try {
-    const body = (await context.request.json()) as Partial<Settings>;
-
-    if (!body.refreshInterval || !body.llm) {
-      return new Response(
-        JSON.stringify({ status: 'error', message: 'Missing required fields: refreshInterval, llm' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        },
-      );
+    let body: Partial<Settings>;
+    try {
+      body = (await request.json()) as Partial<Settings>;
+    } catch {
+      // Fallback for different formats
+      body = {};
     }
 
-    if (!body.llm.provider || !body.llm.model) {
+    // Support both old and new format from frontend
+    const refreshInterval = (body as any).sweep?.refreshInterval || body.refreshInterval || 15;
+
+    const llm = (body as any).llm || body;
+
+    if (!llm.provider) {
       return new Response(
-        JSON.stringify({ status: 'error', message: 'Missing required LLM fields: provider, model' }),
+        JSON.stringify({ status: 'error', message: 'Missing required LLM field: provider' }),
         {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
@@ -102,15 +103,20 @@ export async function onRequestPut(context: { env: Env; request: Request }) {
     }
 
     const settings: Settings = {
-      apiKeys: body.apiKeys ?? {},
-      llm: body.llm,
-      translation: body.translation,
-      telegram: body.telegram,
-      discord: body.discord,
-      refreshInterval: body.refreshInterval,
+      apiKeys: (body as any).apiKeys || (body as any).sweep?.apiKeys || {},
+      llm: {
+        provider: llm.provider,
+        model: llm.model || (body as any).model || '',
+        apiKey: llm.apiKey || '',
+        baseUrl: llm.baseUrl,
+      },
+      translation: (body as any).translation,
+      telegram: (body as any).telegram || (body as any).bots?.telegram,
+      discord: (body as any).discord,
+      refreshInterval: refreshInterval,
     };
 
-    await setSettings(context.env.CONFIG_KV, settings, context.env);
+    await setSettings(env.CONFIG_KV, settings, env);
 
     return new Response(JSON.stringify({ status: 'ok' }), {
       status: 200,

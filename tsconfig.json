@@ -16,6 +16,6 @@
     "outDir": "./dist",
     "rootDir": "."
   },
-  "include": ["lib/**/*.ts", "functions/**/*.ts", "workers/**/*.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "public"]
 }

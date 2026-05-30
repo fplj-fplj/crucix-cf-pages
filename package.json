@@ -4,9 +4,10 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "wrangler pages dev public --kv BRIEFING_KV --kv CONFIG_KV --port 3117",
-    "deploy": "wrangler pages deploy public",
-    "build": "echo 'Static site, no build step required'"
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "echo 'Worker deployment, no build step required'",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "wrangler": "^4.0.0",
