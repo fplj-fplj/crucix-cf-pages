@@ -1,4 +1,4 @@
-# Crucix CF Pages
+# Crucix CF Workers
 
 **你的专属情报终端。27 个数据源。一个命令。零云依赖。**
 
@@ -6,7 +6,7 @@
 [![Node.js 22+](https://img.shields.io/badge/node-22%2B-brightgreen)](#前置要求)
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
 
-**访问在线演示**: [https://crucix.pages.dev/](https://crucix.pages.dev/)
+**访问在线演示**: [https://crucix-cf-pages.pages.dev/](https://crucix-cf-pages.pages.dev/)
 
 ---
 
@@ -14,8 +14,8 @@
 
 本项目是 [Crucix](https://github.com/calesthio/Crucix) 的复刻版本，感谢原作者 [calesthio](https://github.com/calesthio) 创造了如此出色的 OSINT 情报终端。
 
-原项目的创新设计和架构为这个 CF Pages 版本奠定了坚实基础。我们在原版基础上进行了以下改进：
-- 适配 Cloudflare Pages 无服务器架构
+原项目的创新设计和架构为这个 CF Workers 版本奠定了坚实基础。我们在原版基础上进行了以下改进：
+- 适配 Cloudflare Workers 无服务器架构
 - 添加完整中英双语支持
 - 新增内容翻译功能（Google/Microsoft 翻译）
 - 将 Bot 从轮询模式改为 Webhook 模式
@@ -101,13 +101,13 @@ LLM 功能：AI 交易想法生成、智能告警评估（FLASH/PRIORITY/ROUTINE
 
 ---
 
-## 🚀 Cloudflare Pages 快速部署
+## 🚀 Cloudflare Workers 快速部署
 
 ### 方式一：一键部署（快速开始）
 
 [![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/fplj-fplj/crucix-cf-pages)
 
-点击上方按钮快速开始部署。注意：部署后需要手动配置 KV 绑定（见下文）。
+点击上方按钮快速开始部署。部署前需要先创建 KV 命名空间并配置 `wrangler.toml`。
 
 ---
 
@@ -126,57 +126,42 @@ LLM 功能：AI 交易想法生成、智能告警评估（FLASH/PRIORITY/ROUTINE
    - `CONFIG_KV`（用于存储配置）
 4. 复制两个命名空间的 **ID**
 
-#### 第三步：在 Cloudflare Pages 中部署
+#### 第三步：配置 wrangler.toml
 
-1. 在 Cloudflare Dashboard 中进入 **Workers & Pages** → **Create application** → **Pages**
-2. 点击 **Connect to Git**，选择你 fork 的仓库
-3. 配置部署设置：
-   - **Project name**: 自定义名称
-   - **Production branch**: `main`
-   - **Framework preset**: 选择 `None`
-   - **Build command**: 留空或输入 `npm run build`
-   - **Build output directory**: `public`
-4. 点击 **Save and Deploy**
+在 fork 的仓库中编辑 `wrangler.toml`，填入你的 KV 命名空间 ID：
 
-#### 第四步：配置 KV 绑定
+```toml
+[[kv_namespaces]]
+binding = "BRIEFING_KV"
+id = "YOUR_BRIEFING_KV_ID"  # 替换这里
 
-部署完成后：
+[[kv_namespaces]]
+binding = "CONFIG_KV"
+id = "YOUR_CONFIG_KV_ID"    # 替换这里
+```
 
-1. 进入你的 Pages 项目 → **Settings** → **Functions**
-2. 向下滚动到 **KV namespace bindings**
-3. 点击 **Add binding**
-4. 添加两个绑定：
-   - **Variable name**: `BRIEFING_KV`，选择刚才创建的同名 KV 命名空间
-   - **Variable name**: `CONFIG_KV`，选择刚才创建的同名 KV 命名空间
-5. 点击 **Save**
+#### 第四步：部署到 Cloudflare Workers
 
-#### 第五步：配置 Cron Trigger（可选但推荐）
+在本地运行：
 
-在 Pages 项目设置中：
+```bash
+npm install
+npm run deploy
+```
 
-1. 进入 **Settings** → **Triggers** → **Cron Triggers**
-2. 点击 **Add trigger**
-3. 设置：
-   - **Cron expression**: `*/15 * * * *`（每 15 分钟执行一次）
-   - **Environment**: Production
-   - **Function**: 选择 `workers/cron-sweep.ts`
-4. 点击 **Save**
+或者使用 GitHub Actions 自动部署（见下文）。
 
-#### 第六步：重新部署
+#### 第五步：访问应用
 
-触发一次重新部署，让 KV 绑定生效：
-1. 进入 **Deployments** 标签
-2. 点击最新部署旁边的 **Retry deployment**，或者在 GitHub 中推一个空提交
-
-部署完成后访问 `https://your-project-name.pages.dev/`
+部署完成后访问 `https://your-worker-name.your-subdomain.workers.dev/`
 
 ---
 
-### 方式二：使用 GitHub Actions 自动部署
+### 方式三：使用 GitHub Actions 自动部署
 
 #### 第一步：Fork 仓库 + 创建 KV 命名空间
 
-同方式一的第一步和第二步。
+同方式二的第一步和第二步。
 
 #### 第二步：配置 GitHub Secrets
 
@@ -188,24 +173,22 @@ LLM 功能：AI 交易想法生成、智能告警评估（FLASH/PRIORITY/ROUTINE
 | Secret 名称 | 说明 |
 |------------|------|
 | `CF_ACCOUNT_ID` | Cloudflare 账户 ID（Dashboard 右下角） |
-| `CF_API_TOKEN` | Cloudflare API Token（创建 Token，权限：Account:Workers KV:Edit） |
-| `KV_BRIEFING_ID` | BRIEFING_KV 命名空间 ID |
-| `KV_CONFIG_ID` | CONFIG_KV 命名空间 ID |
+| `CF_API_TOKEN` | Cloudflare API Token（创建 Token，权限：Account:Workers KV:Edit，Worker Scripts:Edit） |
 
-#### 第三步：创建 Pages 项目
+#### 第三步：配置 wrangler.toml
 
-在 Cloudflare Pages 中创建项目（同方式一第三步），记录下项目名称。
+在仓库中编辑 `wrangler.toml`，填入你的 KV 命名空间 ID。
 
 #### 第四步：自动部署
 
 push 到 `main` 分支时，GitHub Actions 自动：
-- 运行 TypeScript 编译
-- 部署到 Cloudflare Pages
-- 绑定 KV 命名空间
+- 运行 TypeScript 编译检查
+- 部署到 Cloudflare Workers
+- 自动配置 KV 绑定和 Cron Trigger
 
-部署完成后访问 `https://your-project-name.pages.dev/`
+部署完成后访问 `https://your-worker-name.your-subdomain.workers.dev/`
 
-### 方式三：本地开发
+### 方式四：本地开发
 
 #### 前置要求
 
@@ -221,7 +204,7 @@ cd crucix-cf-pages
 npm install
 ```
 
-#### 创建 KV 命名空间（本地）
+#### 创建 KV 命名空间（本地测试）
 
 ```bash
 wrangler kv namespace create BRIEFING_KV
@@ -246,7 +229,7 @@ id = "YOUR_CONFIG_KV_ID"    # 替换这里
 npm run dev
 ```
 
-访问 `http://localhost:3117`，首次加载会运行完整扫描（30-60 秒）。
+访问 `http://localhost:8787`，使用 wrangler 本地开发环境。
 
 #### 生产部署
 
@@ -256,31 +239,16 @@ npm run deploy
 
 #### GitHub Actions 自动部署
 
-**默认已关闭** - 为避免频繁的部署失败通知，GitHub Actions 自动部署目前已设置为手动触发模式。
-
-**如何启用自动部署：**
-
-1. 打开 `.github/workflows/deploy.yml` 文件
-2. 修改 `on` 部分，取消注释 `push` 事件：
-
-```yaml
-on:
-  push:
-    branches: [main]  # 取消注释这两行以启用自动部署
-  workflow_dispatch:
-```
-
-3. 提交并推送更改
+**默认已配置** - 推送代码到 `main` 分支时会自动触发部署。
 
 **如何手动触发部署：**
-- 访问 GitHub 仓库 → Actions → Deploy to Cloudflare Pages → Run workflow
+- 访问 GitHub 仓库 → Actions → Deploy to Cloudflare Workers → Run workflow
 
 **注意事项：**
-- 启用自动部署前，请确保已正确配置以下 Secrets：
+- 确保已正确配置以下 Secrets：
   - `CF_API_TOKEN` - Cloudflare API Token
   - `CF_ACCOUNT_ID` - Cloudflare Account ID
-  - `KV_BRIEFING_ID` - BRIEFING_KV 命名空间 ID（可选）
-  - `KV_CONFIG_ID` - CONFIG_KV 命名空间 ID（可选）
+- 确保 `wrangler.toml` 中的 KV 命名空间 ID 已正确配置
 
 ---
 
@@ -362,33 +330,38 @@ on:
 
 ```
 crucix-cf-pages/
-├── functions/api/          # Cloudflare Pages Functions（API 端点）
-│   ├── briefing.ts        # GET /api/briefing
-│   ├── sweep.ts           # POST /api/sweep
-│   ├── delta.ts           # GET /api/delta
-│   ├── markets.ts         # GET /api/markets
-│   ├── settings.ts        # GET/PUT /api/settings
-│   ├── models.ts          # GET /api/models
-│   ├── health.ts          # GET /api/health
-│   ├── translate.ts       # POST /api/translate
-│   ├── telegram/          # Telegram Webhook
-│   └── discord/           # Discord Interaction
-├── lib/
-│   ├── sources/           # 20 个数据源适配器
-│   ├── sweep/             # 扫描编排 + 数据合成
-│   ├── delta/             # 增量计算引擎
-│   ├── llm/               # LLM 集成层（8 提供商）
-│   ├── alerts/            # 告警系统
-│   ├── bots/              # Bot 逻辑
-│   └── utils/             # 工具函数
-├── workers/
-│   └── cron-sweep.ts      # Cron Trigger 定时扫描
-├── public/
+├── src/
+│   ├── index.ts           # Worker 主入口
+│   ├── types.ts           # TypeScript 类型定义
+│   ├── api/              # API 端点
+│   │   ├── briefing.ts    # GET /api/briefing
+│   │   ├── sweep.ts       # POST /api/sweep
+│   │   ├── delta.ts       # GET /api/delta
+│   │   ├── markets.ts     # GET /api/markets
+│   │   ├── settings.ts    # GET/PUT /api/settings
+│   │   ├── models.ts      # GET /api/models
+│   │   ├── health.ts     # GET /api/health
+│   │   ├── translate.ts   # POST /api/translate
+│   │   ├── telegram/      # Telegram Webhook
+│   │   └── discord/       # Discord Interaction
+│   ├── utils/            # 工具模块
+│   │   ├── sources/       # 20 个数据源适配器
+│   │   ├── sweep/         # 扫描编排 + 数据合成
+│   │   ├── delta/         # 增量计算引擎
+│   │   ├── llm/           # LLM 集成层（8 提供商）
+│   │   ├── alerts/        # 告警系统
+│   │   ├── bots/          # Bot 逻辑
+│   │   └── utils/         # 工具函数
+│   └── workers/           # Worker 相关
+│       └── cron-sweep.ts  # Cron Trigger 定时扫描
+├── public/               # 静态资源
 │   ├── index.html         # 主仪表盘
 │   ├── settings.html      # 设置页面
 │   ├── css/               # 样式（Jarvis 风格）
-│   └── js/                # 前端模块
-└── locales/              # i18n 翻译文件
+│   ├── js/                # 前端模块
+│   └── locales/           # i18n 翻译文件
+├── wrangler.toml         # Cloudflare Workers 配置
+└── tsconfig.json         # TypeScript 配置
 ```
 
 ### 技术栈
@@ -398,19 +371,19 @@ crucix-cf-pages/
 | 前端框架 | Vanilla JS（零依赖） |
 | 3D 可视化 | Globe.gl |
 | 地图 | Leaflet + CartoDB Dark Matter |
-| 后端 | Cloudflare Pages Functions |
+| 后端 | Cloudflare Workers |
 | 数据存储 | Cloudflare KV |
 | 定时任务 | Workers Cron Triggers |
 | Bot | Telegram Webhook / Discord Interaction |
 | 类型检查 | TypeScript（strict 模式） |
-| 运行环境 | Cloudflare Workers（兼容） |
+| 运行环境 | Cloudflare Workers |
 
 ---
 
 ## ⚠️ 代币/资产声明
 
 > [!WARNING]
-> **Crucix CF Pages 未发行任何官方代币、币种、NFT、空投、预售或任何区块链资产。**
+> **Crucix CF Workers 未发行任何官方代币、币种、NFT、空投、预售或任何区块链资产。**
 > 任何使用 Crucix 名称、Logo 或品牌标识的代币或数字资产均与 Crucix 无关联或背书。
 > 请勿购买、推广、连接钱包领取、签署交易或基于第三方帖子、DM 或网站发送资金。
 
