@@ -181,12 +181,38 @@ npm run deploy
 
 #### 第四步：自动部署
 
-push 到 `main` 分支时，GitHub Actions 自动：
-- 运行 TypeScript 编译检查
-- 部署到 Cloudflare Workers
-- 自动配置 KV 绑定和 Cron Trigger
+**🔒 默认关闭自动构建** - 为了避免频繁的部署失败通知，默认仅支持手动触发部署。
 
-部署完成后访问 `https://your-worker-name.your-subdomain.workers.dev/`
+**如何手动触发部署：**
+- 访问 GitHub 仓库 → Actions → Deploy to Cloudflare Workers → Run workflow
+
+**如何开启自动构建（可选）：**
+1. 打开 `.github/workflows/deploy.yml` 文件
+2. 找到 `on:` 部分，取消注释以下两行：
+   ```yaml
+   # push:
+   #   branches: [main]
+   ```
+   改为：
+   ```yaml
+   push:
+     branches: [main]
+   ```
+3. 提交并推送更改
+
+**开启后效果：**
+- 每次推送到 `main` 分支时，GitHub Actions 将自动运行 TypeScript 检查并部署到 Cloudflare Workers
+
+**注意事项：**
+- 确保已正确配置以下 Secrets：
+  - `CF_API_TOKEN` - Cloudflare API Token
+  - `CF_ACCOUNT_ID` - Cloudflare Account ID
+- （可选）如果已提前创建 KV 命名空间，添加以下 Secrets 以避免重新创建：
+  - `KV_BRIEFING_ID` - BRIEFING_KV 命名空间 ID
+  - `KV_CONFIG_ID` - CONFIG_KV 命名空间 ID
+- `wrangler.toml` 中的 KV 占位符会在部署时自动替换
+
+---
 
 ### 方式四：本地开发
 
@@ -236,19 +262,6 @@ npm run dev
 ```bash
 npm run deploy
 ```
-
-#### GitHub Actions 自动部署
-
-**默认已配置** - 推送代码到 `main` 分支时会自动触发部署。
-
-**如何手动触发部署：**
-- 访问 GitHub 仓库 → Actions → Deploy to Cloudflare Workers → Run workflow
-
-**注意事项：**
-- 确保已正确配置以下 Secrets：
-  - `CF_API_TOKEN` - Cloudflare API Token
-  - `CF_ACCOUNT_ID` - Cloudflare Account ID
-- 确保 `wrangler.toml` 中的 KV 命名空间 ID 已正确配置
 
 ---
 
@@ -360,6 +373,9 @@ crucix-cf-pages/
 │   ├── css/               # 样式（Jarvis 风格）
 │   ├── js/                # 前端模块
 │   └── locales/           # i18n 翻译文件
+├── .github/
+│   └── workflows/
+│       └── deploy.yml    # GitHub Actions 部署配置
 ├── wrangler.toml         # Cloudflare Workers 配置
 └── tsconfig.json         # TypeScript 配置
 ```
